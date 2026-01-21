@@ -1,95 +1,71 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import Header from './components/Header'
 import TaskForm from './components/TaskForm'
 import TaskList from './components/TaskList'
 import TaskStats from './components/TaskStats'
 import SearchBar from './components/SearchBar'
+import Toast from './components/Tos'
+import ConfirmModal from './components/ConfirmModal'
+import { useTasks } from './hooks/useTasks'
+import { useTheme } from './hooks/useTheme'
 
 function App() {
-  // Theme state (light / dark)
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem('theme') || 'light'
-  })
-
-  // Apply theme correctly for Tailwind
-  useEffect(() => {
-    const root = document.documentElement
-
-    if (theme === 'dark') {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
-    }
-
-    localStorage.setItem('theme', theme)
-  }, [theme])
-
-
-  // Tasks state
-  const [tasks, setTasks] = useState(() => {
-    const savedTasks = localStorage.getItem('tasks')
-    return savedTasks ? JSON.parse(savedTasks) : []
-  })
+  const { theme, setTheme } = useTheme()
+  const {
+    tasks,
+    addTask,
+    deleteTask,
+    toggleTask,
+    editTask,
+    reorderTasks,
+    setTasks,
+  } = useTasks()
 
   const [filter, setFilter] = useState('all')
   const [searchText, setSearchText] = useState('')
+  const [deletedTask, setDeletedTask] = useState(null)
+  const [confirmTask, setConfirmTask] = useState(null)
 
-  useEffect(() => {
-    localStorage.setItem('tasks', JSON.stringify(tasks))
-  }, [tasks])
-
-  const addTask = (text) => {
-    setTasks([
-      ...tasks,
-      { id: Date.now(), text, completed: false }
-    ])
+  // Request delete (confirmation modal)
+  const requestDelete = (task) => {
+    setConfirmTask(task)
   }
 
-  const deleteTask = (id) => {
-    setTasks(tasks.filter(task => task.id !== id))
+  // Confirm delete
+  const confirmDelete = () => {
+    setDeletedTask(confirmTask)
+    deleteTask(confirmTask.id)
+    setConfirmTask(null)
   }
 
-  const toggleTask = (id) => {
-    setTasks(
-      tasks.map(task =>
-        task.id === id
-          ? { ...task, completed: !task.completed }
-          : task
-      )
-    )
+  // Undo delete
+  const undoDelete = () => {
+    setTasks(prev => [...prev, deletedTask])
+    setDeletedTask(null)
   }
 
-  const editTask = (id, newText) => {
-    setTasks(
-      tasks.map(task =>
-        task.id === id ? { ...task, text: newText } : task
-      )
-    )
-  }
+  // Filter + search
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const matchesFilter =
+        filter === 'all'
+          ? true
+          : filter === 'active'
+            ? !task.completed
+            : task.completed
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesFilter =
-      filter === 'all'
-        ? true
-        : filter === 'active'
-          ? !task.completed
-          : task.completed
+      const matchesSearch = task.text
+        .toLowerCase()
+        .includes(searchText.toLowerCase())
 
-    const matchesSearch = task.text
-      .toLowerCase()
-      .includes(searchText.toLowerCase())
-
-    return matchesFilter && matchesSearch
-  })
+      return matchesFilter && matchesSearch
+    })
+  }, [tasks, filter, searchText])
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900
-                    flex items-center justify-center p-4 transition-colors">
-      <div className="bg-white dark:bg-gray-800
-                      text-gray-900 dark:text-gray-100
-                      p-6 rounded-xl shadow-xl
-                      w-full max-w-xl transition-all">
-
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600
+  dark:from-gray-900 dark:via-gray-800 dark:to-black flex items-center justify-center p-4">
+      <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-xl">
         <Header theme={theme} setTheme={setTheme} />
 
         <TaskForm onAddTask={addTask} />
@@ -100,13 +76,12 @@ function App() {
           onSearchChange={setSearchText}
         />
 
-        {/* Filter Buttons */}
-        <div className="flex flex-wrap justify-center gap-2 mb-4">
+        <div className="flex gap-2 justify-center mb-4">
           {['all', 'active', 'completed'].map(type => (
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className={`px-3 py-1 rounded capitalize transition
+              className={`px-3 py-1 rounded transition
                 ${filter === type
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-200 dark:bg-gray-700'}
@@ -119,10 +94,27 @@ function App() {
 
         <TaskList
           tasks={filteredTasks}
-          onDelete={deleteTask}
+          onDelete={requestDelete}
           onToggle={toggleTask}
           onEdit={editTask}
+          onReorder={reorderTasks}
         />
+
+        {confirmTask && (
+          <ConfirmModal
+            message="Are you sure you want to delete this task?"
+            onConfirm={confirmDelete}
+            onCancel={() => setConfirmTask(null)}
+          />
+        )}
+
+        {deletedTask && (
+          <Toast
+            message="Task deleted"
+            onUndo={undoDelete}
+            onClose={() => setDeletedTask(null)}
+          />
+        )}
       </div>
     </div>
   )
