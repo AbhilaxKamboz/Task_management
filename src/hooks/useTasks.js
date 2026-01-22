@@ -14,17 +14,24 @@ export function useTasks() {
 
   // Add task with priority & due date
   const addTask = (text, priority, dueDate) => {
-    setTasks(prev => [
-      ...prev,
-      {
-        id: Date.now(),
-        text,
-        completed: false,
-        priority,
-        dueDate,
-      },
-    ])
+  const newTask = {
+    id: Date.now(),
+    text,
+    completed: false,
+    priority,
+    dueDate,
   }
+
+  setTasks(prev => [...prev, newTask])
+
+  //  Browser Notification
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('New Task Added ✅', {
+      body: text,
+    })
+  }
+}
+
 
   const deleteTask = (id) => {
     setTasks(prev => prev.filter(task => task.id !== id))

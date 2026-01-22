@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import Header from './components/Header'
 import TaskForm from './components/TaskForm'
 import TaskList from './components/TaskList'
@@ -61,6 +61,14 @@ function App() {
       return matchesFilter && matchesSearch
     })
   }, [tasks, filter, searchText])
+
+  // Ask browser notification permission on app load
+  useEffect(() => {
+    if ('Notification' in window) {
+      Notification.requestPermission()
+    }
+  }, [])
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600
