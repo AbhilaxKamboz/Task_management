@@ -7,7 +7,7 @@ import {
 import TaskItem from './TaskItem'
 
 // Task list with drag & drop
-function TaskList({ tasks, onDelete, onToggle, onEdit, onReorder }) {
+function TaskList({ tasks, onDelete, onToggle, onEdit, onReorder, onToggleReminder }) {
 
   const handleDragEnd = (event) => {
     const { active, over } = event
@@ -37,6 +37,7 @@ function TaskList({ tasks, onDelete, onToggle, onEdit, onReorder }) {
               onDelete={onDelete}
               onToggle={onToggle}
               onEdit={onEdit}
+              onToggleReminder={onToggleReminder}
             />
           ))}
         </div>

@@ -6,30 +6,25 @@ export function useTasks() {
     const saved = localStorage.getItem('tasks')
     return saved ? JSON.parse(saved) : []
   })
+  // Store reminder timers (taskId -> timeoutId)
+  const reminderTimers = useRef({})
 
   // Persist tasks
   useEffect(() => {
     localStorage.setItem('tasks', JSON.stringify(tasks))
   }, [tasks])
 
-  // Re-schedule reminders on page reload
-  useEffect(() => {
-  tasks.forEach(task => {
-    if (task.reminderEnabled) {
-      scheduleReminder(task)
-    }
-  })
-}, [])
-
   // Schedule due date reminder
-const scheduleReminder = (task) => {
-  //  Reminder OFF or no due date
+  const scheduleReminder = (task) => {
   if (!task.dueDate || !task.reminderEnabled) return
 
-  const dueTime = new Date(task.dueDate).getTime()
-  const now = Date.now()
-  const delay = dueTime - now
+  // 🔥 CLEAR OLD TIMER FIRST
+  if (reminderTimers.current[task.id]) {
+    clearTimeout(reminderTimers.current[task.id])
+  }
 
+  const dueTime = new Date(task.dueDate).getTime()
+  const delay = dueTime - Date.now()
   if (delay <= 0) return
 
   const timeoutId = setTimeout(() => {
@@ -42,6 +37,15 @@ const scheduleReminder = (task) => {
 
   reminderTimers.current[task.id] = timeoutId
 }
+
+  // Re-schedule reminders on page reload
+  useEffect(() => {
+    tasks.forEach(task => {
+      if (task.reminderEnabled) {
+        scheduleReminder(task)
+      }
+    })
+  }, [tasks])
 
   // Add task with priority & due date
   const addTask = (text, priority, dueDate) => {
@@ -66,9 +70,6 @@ const scheduleReminder = (task) => {
     //  Schedule due date reminder
     scheduleReminder(newTask)
   }
-
-  // Store reminder timers (taskId -> timeoutId)
-  const reminderTimers = useRef({})
 
   const deleteTask = (id) => {
     // Clear reminder if exists
@@ -99,31 +100,31 @@ const scheduleReminder = (task) => {
   }
 
   // Toggle reminder ON / OFF
-const toggleReminder = (id) => {
-  setTasks(prev =>
-    prev.map(task => {
-      if (task.id !== id) return task
+  const toggleReminder = (id) => {
+    setTasks(prev =>
+      prev.map(task => {
+        if (task.id !== id) return task
 
-      const updatedTask = {
-        ...task,
-        reminderEnabled: !task.reminderEnabled,
-      }
+        const updatedTask = {
+          ...task,
+          reminderEnabled: !task.reminderEnabled,
+        }
 
-      // Clear existing reminder
-      if (reminderTimers.current[id]) {
-        clearTimeout(reminderTimers.current[id])
-        delete reminderTimers.current[id]
-      }
+        // Clear existing reminder
+        if (reminderTimers.current[id]) {
+          clearTimeout(reminderTimers.current[id])
+          delete reminderTimers.current[id]
+        }
 
-      // Re-schedule if turned ON
-      if (updatedTask.reminderEnabled) {
-        scheduleReminder(updatedTask)
-      }
+        // Re-schedule if turned ON
+        if (updatedTask.reminderEnabled) {
+          scheduleReminder(updatedTask)
+        }
 
-      return updatedTask
-    })
-  )
-}
+        return updatedTask
+      })
+    )
+  }
 
   //  Drag & Drop reorder
   const reorderTasks = (newTasks) => {
