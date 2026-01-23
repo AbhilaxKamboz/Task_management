@@ -5,7 +5,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
 // Single draggable task item
-function TaskItem({ task, onDelete, onToggle, onEdit }) {
+function TaskItem({ task, onDelete, onToggle, onEdit, onToggleReminder }) {
   const [isEditing, setIsEditing] = useState(false)
   const [editText, setEditText] = useState(task.text)
 
@@ -46,7 +46,7 @@ function TaskItem({ task, onDelete, onToggle, onEdit }) {
     >
       <div className="flex items-center gap-2">
 
-        {/* 🔹 DRAG HANDLE ONLY */}
+        {/*  DRAG HANDLE ONLY */}
         <span
           {...attributes}
           {...listeners}
@@ -56,7 +56,7 @@ function TaskItem({ task, onDelete, onToggle, onEdit }) {
           <GripVertical size={18} />
         </span>
 
-        {/* 🔹 TASK TEXT / EDIT MODE */}
+        {/* TASK TEXT / EDIT MODE */}
         <div className="flex-1">
           {isEditing ? (
             <input
@@ -79,7 +79,7 @@ function TaskItem({ task, onDelete, onToggle, onEdit }) {
             </p>
           )}
 
-          {/* 🔹 META INFO */}
+          {/* META INFO */}
           <div className="flex gap-2 mt-1 items-center">
             <span className={`text-xs px-2 rounded
               ${task.priority === 'high' && 'bg-red-500 text-white'}
@@ -97,7 +97,7 @@ function TaskItem({ task, onDelete, onToggle, onEdit }) {
           </div>
         </div>
 
-        {/* 🔹 ACTION BUTTONS */}
+        {/*  ACTION BUTTONS */}
         <div className="flex gap-2">
           {isEditing ? (
             <button onClick={handleSave} title="Save">
@@ -108,6 +108,16 @@ function TaskItem({ task, onDelete, onToggle, onEdit }) {
               <Edit2 size={18} />
             </button>
           )}
+          <button
+            onClick={() => onToggleReminder(task.id)}
+            title={task.reminderEnabled ? 'Disable Reminder' : 'Enable Reminder'}
+            className={`transition
+    ${task.reminderEnabled
+                ? 'text-green-600'
+                : 'text-gray-400'}`}
+          >
+            {task.reminderEnabled ? '🔔' : '🔕'}
+          </button>
 
           <button onClick={() => onDelete(task)} title="Delete">
             <Trash2 size={18} className="text-red-500" />

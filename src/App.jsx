@@ -19,6 +19,7 @@ function App() {
     editTask,
     reorderTasks,
     setTasks,
+    toggleReminder
   } = useTasks()
 
   const [filter, setFilter] = useState('all')
@@ -106,6 +107,7 @@ function App() {
           onToggle={toggleTask}
           onEdit={editTask}
           onReorder={reorderTasks}
+          onToggleReminder={toggleReminder}
         />
 
         {confirmTask && (
